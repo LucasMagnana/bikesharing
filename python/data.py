@@ -6,13 +6,14 @@ from rdp import *
 import requests
 import numpy as np
 import xml.etree.ElementTree as ET
-import os.path
+import os
+from math import sin, cos, sqrt, atan2, radians
 
 def check_file(file, content):
     if(not(os.path.isfile(file))):
         print("Warning: creating", file)
         open(file, "x")
-        with open(file,'rb') as infile:
+        with open(file,'wb') as infile:
             pickle.dump(content, infile)
 
 
@@ -228,8 +229,11 @@ def compute_distance(infile, outfile):
     with open(infile,'rb') as infile:
         df = pickle.load(infile)
     check_file(outfile, [])
-    with open(outfile,'rb') as infile:
-        tab_distances = pickle.load(infile)
+    if(os.stat(outfile).st_size != 0):
+        with open(outfile,'rb') as infile:
+            tab_distances = pickle.load(infile)
+    else:
+        tab_distances = []
     for i in range(len(tab_distances), df.iloc[-1]["route_num"]+1):
         df_temp = df[df["route_num"]==i]
         dist = 0
