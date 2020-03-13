@@ -58,13 +58,6 @@ def request_map_matching(df_route):
     return tab_requests
 
 
-def dataframe_to_array(df):
-    tab = []
-    for i in range(len(df)):
-        tab.append([df.iloc[i]["lat"], df.iloc[i]["lon"]])
-    return tab
-
-
 def clean_dataframe(df):
     nb_empty = 0
     df_final = pd.DataFrame(columns=['lat', 'lon', 'route_num'])
@@ -245,3 +238,45 @@ def compute_distance(infile, outfile):
             tab_distances.append(0)
     with open(outfile, 'wb') as outfile:
         pickle.dump(tab_distances, outfile)
+
+
+
+def dataframe_to_array(df):
+    tab = []
+    for i in range(len(df)):
+        tab.append([df.iloc[i]["lat"], df.iloc[i]["lon"]])
+    return tab
+
+
+def harmonize_route(v1, v2):
+    diff = max(len(v1), len(v2)) - min(len(v1), len(v2))
+    if(len(v1) > len(v2)):
+        shorter_route = v2
+    else:
+        shorter_route = v1
+    for i in range(0, diff*2, 2):
+        indice = i%(len(shorter_route)-1)
+        new_point = [(shorter_route[indice][0]+shorter_route[indice+1][0])/2,
+                     (shorter_route[indice][1]+shorter_route[indice+1][1])/2]
+        shorter_route.insert(indice+1, new_point)
+
+
+def normalize_route(v1, n):
+    diff = n-len(v1)
+    if(diff < 0):
+        print("Route is too long !")
+        return
+    for i in range(0, diff*2, 2):
+        indice = i%(len(v1)-1)
+        new_point = [(v1[indice][0]+v1[indice+1][0])/2,
+                     (v1[indice][1]+v1[indice+1][1])/2]
+        v1.insert(indice+1, new_point)
+
+
+'''def harmonize_route(v1, v2):
+    diff = max(len(v1), len(v2)) - min(len(v1), len(v2))
+    if(len(v1)>len(v2)):
+        v2 += [v2[-1]]*diff
+    else:
+        v1 += [v1[-1]]*diff
+    return v1, v2'''

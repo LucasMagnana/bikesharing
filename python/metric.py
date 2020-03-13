@@ -1,27 +1,6 @@
 from dipy.segment.metric import Metric, ResampleFeature
 from dipy.segment.clustering import QuickBundles
 
-def harmonize_route(v1, v2):
-    diff = max(len(v1), len(v2)) - min(len(v1), len(v2))
-    if(len(v1) > len(v2)):
-        shorter_route = v2
-    else:
-        shorter_route = v1
-    for i in range(0, diff*2, 2):
-        indice = i%(len(shorter_route)-1)
-        new_point = [(shorter_route[indice][0]+shorter_route[indice+1][0])/2,
-                     (shorter_route[indice][1]+shorter_route[indice+1][1])/2]
-        shorter_route.insert(indice+1, new_point)
-
-
-'''def harmonize_route(v1, v2):
-    diff = max(len(v1), len(v2)) - min(len(v1), len(v2))
-    if(len(v1)>len(v2)):
-        v2 += [v2[-1]]*diff
-    else:
-        v1 += [v1[-1]]*diff
-    return v1, v2'''
-
 
 def get_distance_voxels(tab_routes_voxels, num_route1, num_route2):
     
