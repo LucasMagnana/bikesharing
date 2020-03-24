@@ -2,6 +2,8 @@
 import plotly.express as px
 import pandas as pd
 
+import python.voxels as voxel
+
 token = "pk.eyJ1IjoibG1hZ25hbmEiLCJhIjoiY2s2N3hmNzgwMGNnODNqcGJ1N2l2ZXZpdiJ9.-aOxDLM8KbEQnJfXegtl7A"
 px.set_mapbox_access_token(token)
 
@@ -34,3 +36,24 @@ def display_routes(df, tab_routes, tab_voxels=[], line_group="route_num", color=
     for i in range(len(tab_routes)):
         dfdisplay = dfdisplay.append(df[df["route_num"]==tab_routes[i]+1])
     display(dfdisplay, len(tab_routes), line_group, color)
+
+
+def display_cluster_heatmap(df, tab_routes, tab_voxels=[], line_group="route_num", color=None):
+    dfdisplay = pd.DataFrame(columns=["lat", "lon", "route_num"])
+    for i in range(len(tab_routes)):
+        df_temp = df[df["route_num"]==tab_routes[i]+1]
+        df_temp["num_route"] = i+1
+        dfdisplay = dfdisplay.append(df_temp)
+    _, dict_voxels = voxel.create_dict_vox(dfdisplay, dfdisplay.iloc[-1]["route_num"])
+    tab = []
+    for key in dict_voxels:
+        tab_routes = dict_voxels[key][0]+dict_voxels[key][1]
+        vox_str = key.split(";")
+        vox_int = [int(vox_str[0]), int(vox_str[1])]
+        vox_pos = voxel.get_voxel_points(vox_int, 0)
+        if(len(tab_routes) >= 0):
+            tab.append([vox_pos[0][0], vox_pos[0][1], len(tab_routes)])
+
+    dfdisplay = pd.DataFrame(tab, columns=["lat", "lon", "value"])
+    fig = px.scatter_mapbox(dfdisplay, lat="lat", lon="lon",  color="value", size="value", zoom=10)
+    fig.show()

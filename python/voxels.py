@@ -191,10 +191,11 @@ def create_dict_vox(df, nb_routes):
     """
     
     dict_vox = {}
+    tab_routes_voxels = []
     
     
     for route_num in range(1, nb_routes+1):
-        
+        tab_routes_voxels.append([])
         route = df[df["route_num"]==route_num]
         points = route.values.tolist()
         if(len(points) > 1):
@@ -206,6 +207,8 @@ def create_dict_vox(df, nb_routes):
                     dict_vox[key][2].append(route_num)
             else :
                 dict_vox[key] = [[route_num], [], [route_num], []]
+            if(not key in tab_routes_voxels[route_num-1]):
+                tab_routes_voxels[route_num-1].append(key)
                     
                     
         for j in range(len(points)-1):
@@ -235,6 +238,9 @@ def create_dict_vox(df, nb_routes):
                         dict_vox[key][0].append(route_num)
                 else :
                     dict_vox[key] = [[route_num], [], [], []]
+
+                if(not key in tab_routes_voxels[route_num-1]):
+                    tab_routes_voxels[route_num-1].append(key)
                     
                 '''find the good intersection point (if the line is going up, we search the intersection between 
                 it and the up line of the voxel for example)'''
@@ -268,6 +274,9 @@ def create_dict_vox(df, nb_routes):
                     dict_vox[key][0].append(route_num)
             else :
                 dict_vox[key] = [[route_num], [], [], []]
+
+            if(not key in tab_routes_voxels[route_num-1]):
+                tab_routes_voxels[route_num-1].append(key)
         
         if(len(points) > 1):
             vox_int = find_voxel_int(points[-1])
@@ -278,6 +287,9 @@ def create_dict_vox(df, nb_routes):
                     dict_vox[key][0].append(route_num)
             else :
                 dict_vox[key] = [[route_num], [], [], [route_num]]
+
+            if(not key in tab_routes_voxels[route_num-1]):
+                tab_routes_voxels[route_num-1].append(key)
                 
     for key in dict_vox:
         tab_routes = dict_vox[key][0]
@@ -299,7 +311,7 @@ def create_dict_vox(df, nb_routes):
                           and diff_tab_routes[i] not in dict_vox[key][1]):
                             dict_vox[key][1].append(diff_tab_routes[i])
                         
-    return dict_vox
+    return tab_routes_voxels, dict_vox
 
 
 def get_voxels_from_route(route):
@@ -345,7 +357,7 @@ def get_voxels_with_min_routes(dict_vox, min_routes):
     return tab_voxel_with_min_routes
 
 
-def get_tab_routes_voxels(dict_voxels, nb_routes):
+def get_tab_routes_voxels_global(dict_voxels, nb_routes):
     t = []
     for key in dict_voxels:
         for i in range(nb_routes):
