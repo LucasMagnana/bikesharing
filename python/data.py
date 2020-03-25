@@ -241,10 +241,10 @@ def compute_distance(infile, outfile):
 
 
 
-def dataframe_to_array(df):
-    tab = []
-    for i in range(len(df)):
-        tab.append([df.iloc[i]["lat"], df.iloc[i]["lon"]])
+def dataframe_to_array(df, n=2):
+    tab = df.to_numpy().tolist()
+    for i in range(len(tab)):
+        tab[i] = tab[i][:n]
     return tab
 
 

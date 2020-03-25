@@ -68,7 +68,7 @@ def line_intersection(line1, line2):
     return [x, y]
     
 
-def get_voxel_points(vox, num_vox):
+def get_voxel_points(vox, num_vox=-1):
     """
     Take the position of the low left point of a voxel transformed into an int 
     and return this voxel's four real points.

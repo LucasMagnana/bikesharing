@@ -22,38 +22,40 @@ with open("../files/dict_cluster",'rb') as infile:
 with open("../files/cluster_dbscan_custom.tab",'rb') as infile:
     tab_clusters = pickle.load(infile)
 
-df = df_pathfinding
+df = df_simplified
 
 tab_routes_voxels, dict_voxels = voxels.create_dict_vox(df, df.iloc[-1]["route_num"])
 
 tab_routes_voxels_int = []
 
-df_voxels = pd.DataFrame(columns=["lat", "lon", "route_num"])
+df_voxels = pd.DataFrame()
 
 for i in range(len(tab_routes_voxels)):
     nb_vox = 0
     tab_routes_voxels_int.append([])
     route = tab_routes_voxels[i]
     for vox in route:
-        if(nb_vox%5 == 0):
+        if(nb_vox%4 == 0):
             vox_str = vox.split(";")
             vox_int = [int(vox_str[0]), int(vox_str[1])]
-            tab_routes_voxels_int[i].append(vox_int)
+            tab_points = voxels.get_voxel_points(vox_int)
+            points = tab_points[0][:2]+tab_points[1][:2]+tab_points[2][:2]+tab_points[3][:2]
+            tab_routes_voxels_int[i].append(points)
         nb_vox += 1
-    df_temp = pd.DataFrame(tab_routes_voxels_int[i], columns=["lat", "lon"])
+    df_temp = pd.DataFrame(tab_routes_voxels_int[i])
     df_temp["route_num"] = i+1
     df_voxels = df_voxels.append(df_temp)
 
-#df = df_voxels
+df = df_voxels
 
-size_routes = 100
+size_data = 2
 
 learning_rate = 5e-4
 
 
-fc = NN(size_routes, len(dict_cluster)-1)
-rnn = RNN(2, len(dict_cluster)-1)
-lstm = RNN_LSTM(2, len(dict_cluster)-1)
+fc = NN(size_data, len(dict_cluster)-1)
+rnn = RNN(size_data, len(dict_cluster)-1)
+lstm = RNN_LSTM(size_data, len(dict_cluster)-1)
 
 network = lstm
 
@@ -63,13 +65,13 @@ if(cuda):
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss = nn.NLLLoss()
 
-tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_routes, cuda, 15000)
+tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 15000)
 
 
-g_predict = learning.test(df, None, dict_cluster, size_routes, cuda)
+g_predict = learning.test(df, None, dict_cluster, size_data, cuda)
 print("Random:", g_predict*100, "%")
 
-g_predict = learning.test(df, network, dict_cluster, size_routes, cuda)
+g_predict = learning.test(df, network, dict_cluster, size_data, cuda)
 print("Good predict:", g_predict*100, "%")
 
 plt.plot(tab_loss)

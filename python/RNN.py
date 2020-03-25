@@ -38,7 +38,7 @@ class RNN_LSTM(nn.Module):
 
     def __init__(self, input_size, output_size):
         super(RNN_LSTM, self).__init__()
-        self.hidden_size = 512
+        self.hidden_size = 256
 
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
