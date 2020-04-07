@@ -39,11 +39,11 @@ class RNN_LSTM(nn.Module):
     def __init__(self, input_size, output_size):
         super(RNN_LSTM, self).__init__()
         self.hidden_size = 256
-
+        self.num_layers = 2
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_size.
-        self.lstm = nn.LSTM(input_size, self.hidden_size)
+        self.lstm = nn.LSTM(input_size, self.hidden_size, num_layers=self.num_layers)
 
         # The linear layer that maps from hidden state space to tag space
         self.out1 = nn.Linear(self.hidden_size, output_size)
@@ -60,4 +60,4 @@ class RNN_LSTM(nn.Module):
 
     def initHidden(self):
         #return torch.zeros(1, self.hidden_size).unsqueeze(0)
-        return (torch.randn(1, 1, self.hidden_size), torch.randn(1, 1, self.hidden_size))
+        return (torch.randn(self.num_layers, 1, self.hidden_size), torch.randn(self.num_layers, 1, self.hidden_size))

@@ -8,6 +8,7 @@ import numpy as np
 import xml.etree.ElementTree as ET
 import os
 from math import sin, cos, sqrt, atan2, radians
+from geopy.distance import geodesic
 
 def check_file(file, content):
     if(not(os.path.isfile(file))):
@@ -233,6 +234,7 @@ def compute_distance(infile, outfile):
         if(df_temp.shape[0] >= 2):
             for j in range(df_temp.shape[0]-1):
                 dist += distance_between_points(df_temp.iloc[j], df_temp.iloc[j+1])
+                #dist += geodesic((df_temp.iloc[j][0],df_temp.iloc[j][1]), (df_temp.iloc[j+1][0], df_temp.iloc[j+1][1])).kilometers
             tab_distances.append(dist)
         else:
             tab_distances.append(0)

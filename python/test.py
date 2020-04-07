@@ -17,12 +17,10 @@ with open("../files/gpx_pathfindind_cycling.df",'rb') as infile:
     df_pathfinding = pickle.load(infile)
 with open("../files/gpx_matched_simplified.df",'rb') as infile:
     df_simplified = pickle.load(infile)
-with open("../files/dict_cluster",'rb') as infile:
-    dict_cluster = pickle.load(infile)
 with open("../files/cluster_dbscan_custom.tab",'rb') as infile:
     tab_clusters = pickle.load(infile)
 
-df = df_simplified
+df = df_pathfinding
 
 tab_routes_voxels, dict_voxels = voxels.create_dict_vox(df, df.iloc[-1]["route_num"])
 
@@ -35,7 +33,7 @@ for i in range(len(tab_routes_voxels)):
     tab_routes_voxels_int.append([])
     route = tab_routes_voxels[i]
     for vox in route:
-        if(nb_vox%4 == 0):
+        if(nb_vox%5 == 0):
             vox_str = vox.split(";")
             vox_int = [int(vox_str[0]), int(vox_str[1])]
             tab_points = voxels.get_voxel_points(vox_int)
@@ -46,6 +44,9 @@ for i in range(len(tab_routes_voxels)):
     df_temp["route_num"] = i+1
     df_voxels = df_voxels.append(df_temp)
 
+
+#print(tab_clusters)
+
 df = df_voxels
 
 size_data = 2
@@ -53,9 +54,10 @@ size_data = 2
 learning_rate = 5e-4
 
 
-fc = NN(size_data, len(dict_cluster)-1)
-rnn = RNN(size_data, len(dict_cluster)-1)
-lstm = RNN_LSTM(size_data, len(dict_cluster)-1)
+fc = NN(size_data, max(tab_clusters)+1)
+rnn = RNN(size_data, max(tab_clusters)+1)
+lstm = RNN_LSTM(size_data, max(tab_clusters)+1)
+
 
 network = lstm
 
@@ -65,13 +67,13 @@ if(cuda):
 optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
 loss = nn.NLLLoss()
 
-tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 15000)
+tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 30000)
 
 
-g_predict = learning.test(df, None, dict_cluster, size_data, cuda)
+g_predict = learning.test(df, None, tab_clusters, size_data, cuda)
 print("Random:", g_predict*100, "%")
 
-g_predict = learning.test(df, network, dict_cluster, size_data, cuda)
+g_predict = learning.test(df, network, tab_clusters, size_data, cuda)
 print("Good predict:", g_predict*100, "%")
 
 plt.plot(tab_loss)
@@ -91,6 +93,7 @@ for i in inputs:
     # Step through the sequence one element at a time.
     # after each step, hidden contains the hidden state.
     out, hidden = lstm(i.view(1, 1, -1), hidden)
+print(out)
 
 # alternatively, we can do the entire sequence all at once.
 # the first value returned by LSTM is all of the hidden states throughout
@@ -103,5 +106,5 @@ for i in inputs:
 # Add the extra 2nd dimension
 inputs = torch.cat(inputs).view(len(inputs), 1, -1)
 hidden = (torch.randn(1, 1, 3), torch.randn(1, 1, 3))  # clean out hidden state
-print(inputs.shape, hidden.shape)
-out, hidden = lstm(inputs, hidden)'''
+out, hidden = lstm(inputs, hidden)
+print(out[4])'''
