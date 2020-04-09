@@ -19,37 +19,53 @@ with open("../files/gpx_matched_simplified.df",'rb') as infile:
     df_simplified = pickle.load(infile)
 with open("../files/cluster_dbscan_custom.tab",'rb') as infile:
     tab_clusters = pickle.load(infile)
+with open("../files/voxels_pathfinding.dict",'rb') as infile:
+    dict_voxels = pickle.load(infile)
 
 df = df_pathfinding
 
-tab_routes_voxels, dict_voxels = voxels.create_dict_vox(df, df.iloc[-1]["route_num"])
+tab_routes_voxels, _ = voxels.create_dict_vox(df, df.iloc[-1]["route_num"])
 
 tab_routes_voxels_int = []
 
 df_voxels = pd.DataFrame()
 
+
 for i in range(len(tab_routes_voxels)):
+    max_cycl_coeff = 0 
     nb_vox = 0
     tab_routes_voxels_int.append([])
     route = tab_routes_voxels[i]
+    for v in route:
+        vox = dict_voxels[v]
+        if(vox["cyclability_coeff"]>max_cycl_coeff):
+            max_cycl_coeff = vox["cyclability_coeff"]
     for vox in route:
-        if(nb_vox%5 == 0):
+        if(nb_vox%4==0):
             vox_str = vox.split(";")
             vox_int = [int(vox_str[0]), int(vox_str[1])]
             tab_points = voxels.get_voxel_points(vox_int)
-            points = tab_points[0][:2]+tab_points[1][:2]+tab_points[2][:2]+tab_points[3][:2]
+            #points = tab_points[0][:2]+tab_points[1][:2]+tab_points[2][:2]+tab_points[3][:2]
+            points = dict_voxels[vox]["cluster"]
             tab_routes_voxels_int[i].append(points)
         nb_vox += 1
+
+    '''tab_routes_voxels_int[i] = sorted(tab_routes_voxels_int[i], key=lambda k: dict_voxels[str(voxels.find_voxel_int([k[0],k[1]])[0])+";"+str(voxels.find_voxel_int([k[0],k[1]])[1])]["cyclability_coeff"])
+    
+    if(len(tab_routes_voxels_int[i])>50):
+        tab_routes_voxels_int[i] = tab_routes_voxels_int[i][:50]
+    
+    print(len(tab_routes_voxels_int[i]))'''
+
     df_temp = pd.DataFrame(tab_routes_voxels_int[i])
     df_temp["route_num"] = i+1
     df_voxels = df_voxels.append(df_temp)
-
 
 #print(tab_clusters)
 
 df = df_voxels
 
-size_data = 2
+size_data = 1
 
 learning_rate = 5e-4
 

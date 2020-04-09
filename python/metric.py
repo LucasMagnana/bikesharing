@@ -1,9 +1,28 @@
 from dipy.segment.metric import Metric, ResampleFeature
 from dipy.segment.clustering import QuickBundles
+import python.voxels as voxel
+import pickle
+import os
 
 
-def get_distance_voxels(tab_routes_voxels, num_route1, num_route2):
+def get_distance_voxels(num_route1, num_route2, tab_routes_voxels=None):
     
+    if(tab_routes_voxels == None):
+        if(not(os.path.isfile("files/routes_voxels.tab"))):
+            with open("files/gpx_matched_simplified.df",'rb') as infile:
+                df_cluster = pickle.load(infile)
+            _, dict_voxels = voxel.create_dict_vox(df_cluster, df_cluster.iloc[-1]["route_num"])
+            tab_routes_voxels = voxel.get_tab_routes_voxels_global(dict_voxels, df_cluster.iloc[-1]["route_num"])
+
+            with open("files/routes_voxels.tab",'wb') as infile:
+                pickle.dump(tab_routes_voxels, infile)
+        else:
+            with open("files/routes_voxels.tab",'rb') as outfile:
+                tab_routes_voxels = pickle.load(outfile)
+        num_route1 = int(num_route1[0])
+        num_route2 = int(num_route2[0])
+
+
     common_parts = len(list(set(tab_routes_voxels[num_route1-1]) & set(tab_routes_voxels[num_route2-1])))
     #print(len(tab_routes_voxels[num_route1-1]))
     
@@ -27,6 +46,10 @@ def get_distance_voxels(tab_routes_voxels, num_route1, num_route2):
     #return max(len(tab_routes_voxels[num_route1-1]), len(tab_routes_voxels[num_route2-1]))-common_parts
     
     #return (common_parts/max(len(tab_routes_voxels[num_route1-1]), len(tab_routes_voxels[num_route2-1])))*100
+
+def get_distance_voxels_symetric(num_route1, num_route2):
+    dist = get_distance_voxels(num_route1, num_route2)
+    return max(dist[0], dist[1])
 
 
 def get_distance_euclidian(route1, route2, pca):
