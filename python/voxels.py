@@ -172,7 +172,7 @@ def differentiate_voxels_sequences(tab_voxels, dict_vox):
 
 
 
-def create_dict_vox(df, nb_routes):
+def create_dict_vox(df, starting, nb_routes, bikepath=False):
     """
     With a dataframe containing gps points separated in routes, creates a dict of voxels.  
     Parameters
@@ -194,23 +194,14 @@ def create_dict_vox(df, nb_routes):
     tab_routes_voxels = []
     
     
-    for route_num in range(1, nb_routes+1):
+    for route_num in range(starting, nb_routes+1):
         tab_routes_voxels.append([])
         route = df[df["route_num"]==route_num]
         points = route.values.tolist()
+
         if(len(points) > 1):
-            vox_int = find_voxel_int(points[0])
-            key = str(int(vox_int[0]))+";"+str(int(vox_int[1])) #save the voxel
-            if key in dict_vox:
-                dict_vox[key]["tab_routes_starting"].append(route_num)
-                if(route_num not in dict_vox[key]["tab_routes_real"]):
-                    dict_vox[key]["tab_routes_real"].append(route_num)
-            else :
-                dict_vox[key] = {"tab_routes_real": [route_num], "tab_routes_extended": [], "tab_routes_starting": [route_num], "tab_routes_finishing": [],
-                                "cyclability_coeff": 0}
-            if(not key in tab_routes_voxels[route_num-1]):
-                tab_routes_voxels[route_num-1].append(key)
-                    
+            vox_starting_routes = find_voxel_int(points[0])
+            vox_finishing_routes = find_voxel_int(points[-1])
                     
         for j in range(len(points)-1):
             p1 = points[j] #we take two points in the dataframe that create a line
@@ -240,6 +231,12 @@ def create_dict_vox(df, nb_routes):
                 else :
                     dict_vox[key] = {"tab_routes_real": [route_num], "tab_routes_extended": [], "tab_routes_starting": [], "tab_routes_finishing": [],
                                 "cyclability_coeff": 0}
+
+                if(vox_int == vox_starting_routes and route_num not in dict_vox[key]["tab_routes_starting"]):
+                    dict_vox[key]["tab_routes_starting"].append(route_num)
+
+                if(bikepath==True):
+                    dict_vox[key]["cluster"] = route_num
 
                 if(not key in tab_routes_voxels[route_num-1]):
                     tab_routes_voxels[route_num-1].append(key)
@@ -278,22 +275,14 @@ def create_dict_vox(df, nb_routes):
                 dict_vox[key] = {"tab_routes_real": [route_num], "tab_routes_extended": [], "tab_routes_starting": [], "tab_routes_finishing": [],
                                 "cyclability_coeff": 0}
 
-            if(not key in tab_routes_voxels[route_num-1]):
-                tab_routes_voxels[route_num-1].append(key)
-        
-        if(len(points) > 1):
-            vox_int = find_voxel_int(points[-1])
-            key = str(int(vox_int[0]))+";"+str(int(vox_int[1])) #save the voxel
-            if key in dict_vox:
+            if(vox_int == vox_finishing_routes and route_num not in dict_vox[key]["tab_routes_finishing"]):
                 dict_vox[key]["tab_routes_finishing"].append(route_num)
-                if(route_num not in dict_vox[key]["tab_routes_real"]):
-                    dict_vox[key]["tab_routes_real"].append(route_num)
-            else :
-                dict_vox[key] = {"tab_routes_real": [route_num], "tab_routes_extended": [], "tab_routes_starting": [], "tab_routes_finishing": [route_num],
-                                "cyclability_coeff": 0}
+
+            if(bikepath==True):
+                dict_vox[key]["cluster"] = route_num
 
             if(not key in tab_routes_voxels[route_num-1]):
-                tab_routes_voxels[route_num-1].append(key)  
+                tab_routes_voxels[route_num-1].append(key)
 
     nb_max_routes = 0
                
@@ -316,11 +305,13 @@ def create_dict_vox(df, nb_routes):
                         if(diff_tab_routes[i] not in tab_routes
                           and diff_tab_routes[i] not in dict_vox[key]["tab_routes_extended"]):
                             dict_vox[key]["tab_routes_extended"].append(diff_tab_routes[i])
+
         if(len(dict_vox[key]["tab_routes_real"]) + len(dict_vox[key]["tab_routes_extended"]) > nb_max_routes):
             nb_max_routes = len(dict_vox[key]["tab_routes_real"]) + len(dict_vox[key]["tab_routes_extended"])
-    
-    for key in dict_vox:
-        dict_vox[key]["cyclability_coeff"] = (len(dict_vox[key]["tab_routes_real"]) + len(dict_vox[key]["tab_routes_extended"]))/nb_max_routes
+
+    if(bikepath == False):
+        for key in dict_vox:
+            dict_vox[key]["cyclability_coeff"] = (len(dict_vox[key]["tab_routes_real"]) + len(dict_vox[key]["tab_routes_extended"]))/nb_max_routes
 
                         
     return tab_routes_voxels, dict_vox

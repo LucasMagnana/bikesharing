@@ -24,7 +24,7 @@ with open("./files/voxels_pathfinding.dict",'rb') as infile:
 
 df = df_pathfinding
 
-tab_routes_voxels, _ = voxels.create_dict_vox(df, df.iloc[-1]["route_num"])
+tab_routes_voxels, _ = voxels.create_dict_vox(df, df.iloc[0]["route_num"], df.iloc[-1]["route_num"])
 
 tab_routes_voxels_int = []
 
