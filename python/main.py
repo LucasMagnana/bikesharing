@@ -86,7 +86,7 @@ def main(file1, file2, file3, file4):
     optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
     loss = nn.NLLLoss()
 
-    tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 30000)
+    tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 50000)
 
 
     g_predict = learning.test(df, None, tab_clusters, size_data, cuda)
