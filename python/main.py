@@ -7,22 +7,23 @@ import voxels
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pandas as pd
+import argparse
 
 from NN import *
 from RNN import *
 
 
-def main(file1, file2, file3, file4):
+def main(args):
 
     cuda = False
 
-    with open(file1,'rb') as infile:
+    with open(args.path+"files/gpx_pathfindind_cycling.df",'rb') as infile:
         df_pathfinding = pickle.load(infile)
-    with open(file2,'rb') as infile:
+    with open(args.path+"files/gpx_matched_simplified.df",'rb') as infile:
         df_simplified = pickle.load(infile)
-    with open(file3,'rb') as infile:
+    with open(args.path+"files/cluster_dbscan_custom.tab",'rb') as infile:
         tab_clusters = pickle.load(infile)
-    with open(file4,'rb') as infile:
+    with open(args.path+"files/voxels_pathfinding.dict",'rb') as infile:
         dict_voxels = pickle.load(infile)
 
     df = df_pathfinding
@@ -30,8 +31,11 @@ def main(file1, file2, file3, file4):
     tab_routes_voxels, _ = voxels.create_dict_vox(df, df.iloc[0]["route_num"], df.iloc[-1]["route_num"])
 
     tab_routes_voxels_int = []
-
+    
     df_voxels = pd.DataFrame()
+
+    df_voxels_train = pd.DataFrame()
+    df_voxels_test = pd.DataFrame()
 
 
     for i in range(len(tab_routes_voxels)):
@@ -44,12 +48,12 @@ def main(file1, file2, file3, file4):
             if(vox["cyclability_coeff"]>max_cycl_coeff):
                 max_cycl_coeff = vox["cyclability_coeff"]
         for vox in route:
-            if(nb_vox%4==0):
+            if(nb_vox%args.voxels_frequency==0):
                 vox_str = vox.split(";")
                 vox_int = [int(vox_str[0]), int(vox_str[1])]
                 tab_points = voxels.get_voxel_points(vox_int)
                 #points = tab_points[0][:2]+tab_points[1][:2]+tab_points[2][:2]+tab_points[3][:2]
-                points = dict_voxels[vox]["cluster"]
+                points = [dict_voxels[vox]["cluster"], i+1]
                 tab_routes_voxels_int[i].append(points)
             nb_vox += 1
 
@@ -63,19 +67,28 @@ def main(file1, file2, file3, file4):
         df_temp = pd.DataFrame(tab_routes_voxels_int[i])
         df_temp["route_num"] = i+1
         df_voxels = df_voxels.append(df_temp)
+        
+        if(i <= len(tab_routes_voxels)- len(tab_routes_voxels)*args.percentage_test/100):
+            df_voxels_train = df_voxels_train.append(df_temp)
+        else:
+            df_voxels_test = df_voxels_test.append(df_temp)
 
-    #print(tab_clusters)
+    #print(len(df_voxels), len(df_voxels_train), len(df_voxels_test))
 
-    df = df_voxels
+    df_train = df_voxels_train
+    df_test = df_voxels_test
+    
+    if(len(df_test) == 0):
+        df_test = df_train
 
     size_data = 1
 
-    learning_rate = 5e-4
+    learning_rate = args.lr
 
 
     fc = NN(size_data, max(tab_clusters)+1)
     rnn = RNN(size_data, max(tab_clusters)+1)
-    lstm = RNN_LSTM(size_data, max(tab_clusters)+1)
+    lstm = RNN_LSTM(size_data, max(tab_clusters)+1, args.hidden_size, args.num_layers)
 
 
     network = lstm
@@ -86,14 +99,18 @@ def main(file1, file2, file3, file4):
     optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
     loss = nn.NLLLoss()
 
-    tab_loss = learning.train(df, tab_clusters, loss, optimizer, network, size_data, cuda, 50000)
+    tab_loss = learning.train(df_train, tab_clusters, loss, optimizer, network, size_data, cuda, args.num_samples)
 
 
-    g_predict = learning.test(df, None, tab_clusters, size_data, cuda)
+    g_predict = learning.test(df_test, None, tab_clusters, size_data, cuda)
     print("Random:", g_predict*100, "%")
 
-    g_predict = learning.test(df, network, tab_clusters, size_data, cuda)
+    g_predict = learning.test(df_test, network, tab_clusters, size_data, cuda)
     print("Good predict:", g_predict*100, "%")
+    
+    if(g_predict > 0.95):
+        print("Saving network...")
+        torch.save(network.state_dict(), args.path+"/files/network_temp.pt")
 
     plt.plot(tab_loss)
     plt.ylabel('Error')
@@ -129,4 +146,13 @@ def main(file1, file2, file3, file4):
     print(out[4])'''
 
 if __name__ == "__main__": 
-    main("./files/gpx_pathfindind_cycling.df", "./files/gpx_matched_simplified.df", "./files/cluster_dbscan_custom.tab", "./files/voxels_pathfinding.dict")
+    parse = argparse.ArgumentParser()
+    parse.add_argument('--path', type=str, default="./", help="path to the project's main folder")
+    parse.add_argument('--voxels-frequency', type=int, default=4, help="frequency of voxels to send to the network")
+    parse.add_argument('--num-layers', type=int, default=2, help="number of layers in the LSTM network")
+    parse.add_argument('--hidden-size', type=int, default=256, help="size of the hidden layer(s) in the network")
+    parse.add_argument('--num-samples', type=int, default=75000, help="number of data (chosen randomly) to send to the network")
+    parse.add_argument('--lr', type=float, default=5e-4, help='learning rate of the algorithm')
+    parse.add_argument('--percentage-test', type=int, default=0, help='percentage of data to use as testing')
+    
+    main(parse.parse_args())

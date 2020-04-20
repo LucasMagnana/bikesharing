@@ -78,7 +78,7 @@ def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda,
 
         key = -1
         while(key == -1):
-            num_route = random.randint(0, len(tab_clusters)-1)
+            num_route = random.randint(0, df.iloc[-1]["route_num"]-1)
             key = tab_clusters[num_route]
 
         route = data.dataframe_to_array(df[df["route_num"]==num_route+1], size_data)
@@ -110,7 +110,7 @@ def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda,
 def test_recursive(df, network, tab_clusters, size_data, cuda):
     good_predict = 0
     nb_predict = 0
-    for i in range(len(tab_clusters)):
+    for i in range(df.iloc[0]["route_num"], df.iloc[-1]["route_num"]):
         if(tab_clusters[i] != -1):
             route = data.dataframe_to_array(df[df["route_num"]==i+1], size_data)
             tens_route = torch.Tensor(route).unsqueeze(1)
@@ -132,11 +132,11 @@ def test_recursive(df, network, tab_clusters, size_data, cuda):
     return good_predict/nb_predict
 
 
-def test_random(tab_clusters):
+def test_random(df, tab_clusters):
     good_predict = 0
     nb_predict = 0
     last_clust = max(tab_clusters)
-    for i in range(len(tab_clusters)):
+    for i in range(df.iloc[-1]["route_num"]):
         if(tab_clusters[i] != -1):
             pred = random.randint(0, last_clust)
             if(tab_clusters[i] == pred):
@@ -157,4 +157,4 @@ def test(df, network, tab_clusters, size_data, cuda):
     elif(isinstance(network, NN)):
         return test_full_connected(df, network, tab_clusters, size_data, cuda)
     else:
-        return test_random(tab_clusters)
+        return test_random(df, tab_clusters)

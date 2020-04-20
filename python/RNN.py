@@ -36,10 +36,10 @@ class RNN(nn.Module):
 
 class RNN_LSTM(nn.Module):
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, hidden_size, num_layers):
         super(RNN_LSTM, self).__init__()
-        self.hidden_size = 256
-        self.num_layers = 2
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
 
         # The LSTM takes word embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_size.
