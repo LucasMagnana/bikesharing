@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
+import random
 
 from NN import *
 from RNN import *
@@ -68,7 +69,8 @@ def main(args):
         df_temp["route_num"] = i+1
         df_voxels = df_voxels.append(df_temp)
         
-        if(i <= len(tab_routes_voxels)- len(tab_routes_voxels)*args.percentage_test/100):
+        proba_test = random.random()
+        if(proba_test >= args.percentage_test/100):
             df_voxels_train = df_voxels_train.append(df_temp)
         else:
             df_voxels_test = df_voxels_test.append(df_temp)
