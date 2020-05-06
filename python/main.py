@@ -40,14 +40,9 @@ def main(args):
 
 
     for i in range(len(tab_routes_voxels)):
-        max_cycl_coeff = 0 
         nb_vox = 0
         tab_routes_voxels_int.append([])
         route = tab_routes_voxels[i]
-        for v in route:
-            vox = dict_voxels[v]
-            if(vox["cyclability_coeff"]>max_cycl_coeff):
-                max_cycl_coeff = vox["cyclability_coeff"]
         for vox in route:
             if(nb_vox%args.voxels_frequency==0):
                 vox_str = vox.split(";")

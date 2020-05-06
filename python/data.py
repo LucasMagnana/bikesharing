@@ -10,6 +10,8 @@ import os
 from math import sin, cos, sqrt, atan2, radians
 from geopy.distance import geodesic
 
+token = "pk.eyJ1IjoibG1hZ25hbmEiLCJhIjoiY2s2N3hmNzgwMGNnODNqcGJ1N2l2ZXZpdiJ9.-aOxDLM8KbEQnJfXegtl7A"
+
 def check_file(file, content):
     if(not(os.path.isfile(file))):
         print("Warning: creating", file)
@@ -164,27 +166,32 @@ def pathfinding(infile, outfile, nb_routes=sys.maxsize):
     else:
         begin = df_pathfinding.iloc[-1]["route_num"]+1
     for i in range(begin, min(begin+1+nb_routes, df_map_matched_simplified.iloc[-1]["route_num"]+1)): #df_map_matched_simplified.iloc[-1]["route_num"]+1):
-        save_route = True
         df_temp = df_map_matched_simplified[df_map_matched_simplified["route_num"]==i]
         if(not(df_temp.empty)):
-            req = request_route(df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"],
-                                df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]) #mapbox request to find a route between the stations
-            response = req.json()
-            if(response['code']=='Ok'): #if a route have been found
-                steps = response['routes'][0]['legs'][0]['steps'] #we browse all the steps of the route
-                for step in steps:
-                    if(step['maneuver']['instruction'].find("Wharf") != -1):
-                        save_route = False #if the route is not good (using a boat) we don't save it
-                        break
-                if(save_route): #if we save the route
-                    df_temp = pd.DataFrame.from_records(response['routes'][0]['geometry']['coordinates'], 
-                                            columns=['lon', 'lat']) #create a DF from the route (nparray)
-                    df_temp["route_num"] = i
-                    df_pathfinding = df_pathfinding.append(df_temp) #save the DF in dict_trips
-                else: #if we don't save we store an empty DF in dict_trips
-                    df_pathfinding = df_pathfinding.append(pd.DataFrame(columns=['lon', 'lat', 'route_num']))
+            d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
+            f_point = [df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]]
+            pathfind_route(d_point, f_point, df_pathfinding, i, outfile)
+
+def pathfind_route(d_point, f_point, df_pathfinding=pd.DataFrame(), num_route=1, outfile=None):
+    save_route = True
+    req = request_route(d_point[0], d_point[1], f_point[0], f_point[1]) #mapbox request to find a route between the stations
+    response = req.json()
+    if(response['code']=='Ok'): #if a route have been found
+        steps = response['routes'][0]['legs'][0]['steps'] #we browse all the steps of the route
+        for step in steps:
+            if(step['maneuver']['instruction'].find("Wharf") != -1):
+                save_route = False #if the route is not good (using a boat) we don't save it
+                break
+        if(save_route): #if we save the route
+            df_temp = pd.DataFrame.from_records(response['routes'][0]['geometry']['coordinates'], 
+                                    columns=['lon', 'lat']) #create a DF from the route (nparray)
+            df_temp["route_num"] = num_route
+            df_pathfinding = df_pathfinding.append(df_temp) #save the DF in dict_trips
+            if(outfile != None):
                 with open(outfile, 'wb') as outfile:
                     pickle.dump(df_pathfinding, outfile)
+            return df_temp
+    return None
 
 def simplify_gps(infile, outfile, nb_routes=sys.maxsize):
     with open(infile,'rb') as infile:

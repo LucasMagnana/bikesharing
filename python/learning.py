@@ -111,9 +111,9 @@ def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda,
 def test_recursive(df, network, tab_clusters, size_data, cuda):
     good_predict = 0
     nb_predict = 0
-    for i in range(df.iloc[0]["route_num"], df.iloc[-1]["route_num"]):
-        route = data.dataframe_to_array(df[df["route_num"]==i+1], size_data)
-        if(tab_clusters[i] != -1 and len(route)>0):
+    for i in range(df.iloc[0]["route_num"], df.iloc[-1]["route_num"]+1):
+        route = data.dataframe_to_array(df[df["route_num"]==i], size_data)
+        if(tab_clusters[i-1] != -1 and len(route)>0):
             tens_route = torch.Tensor(route).unsqueeze(1)
             if(cuda):
                 tens_route = tens_route.cuda()
@@ -126,10 +126,9 @@ def test_recursive(df, network, tab_clusters, size_data, cuda):
                     input = tens_route[j]
                 output, hidden = network(input, hidden)
             pred = output.argmax(dim=1, keepdim=True)
-            if(tab_clusters[i] == pred.item()):
+            if(tab_clusters[i-1] == pred.item()):
                 good_predict += 1
             nb_predict += 1
-    print(good_predict, nb_predict)
     return good_predict/nb_predict
 
 
