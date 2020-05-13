@@ -17,8 +17,8 @@ from RNN import *
 def main(args):
 
     cuda = False
-
-    with open(args.path+"files/gpx_pathfindind_cycling.df",'rb') as infile:
+    #  gpx_pathfindind_cycling
+    with open(args.path+"files/osmnx_pathfinding_simplified.df",'rb') as infile:
         df_pathfinding = pickle.load(infile)
     with open(args.path+"files/gpx_matched_simplified.df",'rb') as infile:
         df_simplified = pickle.load(infile)
@@ -60,7 +60,7 @@ def main(args):
         
         print(len(tab_routes_voxels_int[i]))'''
 
-        df_temp = pd.DataFrame(tab_routes_voxels_int[i])
+        df_temp = pd.DataFrame(tab_routes_voxels_int[i], dtype=object)
         df_temp["route_num"] = i+1
         df_voxels = df_voxels.append(df_temp)
         
