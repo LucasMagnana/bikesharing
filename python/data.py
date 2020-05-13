@@ -199,9 +199,14 @@ def simplify_gps(infile, outfile, nb_routes=sys.maxsize):
     check_file(outfile, pd.DataFrame(columns=['lon', 'lat', 'route_num']))
     with open(outfile,'rb') as infile:
         df_map_matched_simplified = pickle.load(infile)
-    nb_routes = min(df_map_matched.iloc[-1]["route_num"] - df_map_matched_simplified.iloc[-1]["route_num"], nb_routes)
+    if(len(df_map_matched_simplified) == 0):
+        last_route_simplified = 0
+    else:
+        last_route_simplified = df_map_matched_simplified.iloc[-1]["route_num"]
+    nb_routes = min(df_map_matched.iloc[-1]["route_num"] - last_route_simplified + 1, nb_routes)
+    print(len(df_map_matched_simplified))
     df_map_matched_simplified = df_map_matched_simplified.append(rd_compression(df_map_matched, nb_routes))
-    df_map_matched_simplified
+    print(len(df_map_matched_simplified))
     with open(outfile, 'wb') as outfile:
         pickle.dump(df_map_matched_simplified, outfile)
 

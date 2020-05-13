@@ -10,6 +10,8 @@ import python.data as data
 
 def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, clustering, cuda):
 
+    nb_new_cluster = 0
+
     df_route = data.pathfind_route(d_point, f_point)
     df_route = df_route[["lat", "lon", "route_num"]]
     tab_routes_voxels, _ = voxels.create_dict_vox(df_route, 1, 1)
@@ -27,6 +29,7 @@ def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, c
                 cl = dict_voxels[vox]["cluster"]
             else:
                 cl = clustering.predict([[tab_points[0][0], tab_points[0][1], 0]])[0]
+                nb_new_cluster += 1
             points = [cl]
             tab_voxels_int.append(points)
         nb_vox += 1
@@ -43,5 +46,5 @@ def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, c
                 output, hidden = network(input, hidden)
             pred = output.argmax(dim=1, keepdim=True)
     
-    return df_route, pred.item()
+    return df_route, pred.item(), nb_new_cluster
     
