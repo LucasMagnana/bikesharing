@@ -126,6 +126,8 @@ def test_recursive(df, network, tab_clusters, size_data, cuda):
                     input = tens_route[j]
                 output, hidden = network(input, hidden)
             pred = output.argmax(dim=1, keepdim=True)
+            print(route)
+            print(i, tab_clusters[i-1], pred.item())
             if(tab_clusters[i-1] == pred.item()):
                 good_predict += 1
             nb_predict += 1

@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 import os
 from math import sin, cos, sqrt, atan2, radians
 from geopy.distance import geodesic
+import networkx as nx
+import osmnx as ox
 
 token = "pk.eyJ1IjoibG1hZ25hbmEiLCJhIjoiY2s2N3hmNzgwMGNnODNqcGJ1N2l2ZXZpdiJ9.-aOxDLM8KbEQnJfXegtl7A"
 
@@ -155,7 +157,7 @@ def request_route(lat1, long1, lat2, long2, mode="cycling"):
                             params={"alternatives": "true", "geometries": "geojson", "steps": "true", "access_token": token}) 
 
 
-def pathfinding(infile, outfile, nb_routes=sys.maxsize):
+def pathfinding_mapbox(infile, outfile, nb_routes=sys.maxsize):
     with open(infile,'rb') as infile:
         df_map_matched_simplified = pickle.load(infile)
     check_file(outfile, pd.DataFrame(columns=['lon', 'lat', 'route_num']))
@@ -170,9 +172,12 @@ def pathfinding(infile, outfile, nb_routes=sys.maxsize):
         if(not(df_temp.empty)):
             d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
             f_point = [df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]]
-            pathfind_route(d_point, f_point, df_pathfinding, i, outfile)
+            pathfind_route_mapbox(d_point, f_point, df_pathfinding, i)
+            with open(outfile, 'wb') as outfile:
+                pickle.dump(df_pathfinding, outfile)
 
-def pathfind_route(d_point, f_point, df_pathfinding=pd.DataFrame(), num_route=1, outfile=None):
+
+def pathfind_route_mapbox(d_point, f_point, df_pathfinding=pd.DataFrame(), num_route=1):
     save_route = True
     req = request_route(d_point[0], d_point[1], f_point[0], f_point[1]) #mapbox request to find a route between the stations
     response = req.json()
@@ -187,11 +192,23 @@ def pathfind_route(d_point, f_point, df_pathfinding=pd.DataFrame(), num_route=1,
                                     columns=['lon', 'lat']) #create a DF from the route (nparray)
             df_temp["route_num"] = num_route
             df_pathfinding = df_pathfinding.append(df_temp) #save the DF in dict_trips
-            if(outfile != None):
-                with open(outfile, 'wb') as outfile:
-                    pickle.dump(df_pathfinding, outfile)
             return df_temp
     return None
+
+
+
+def pathfind_route_osmnx(d_point, f_point, tree, G, i=1):
+    d_idx = tree.query([d_point], k=1, return_distance=False)[0]
+    f_idx = tree.query([f_point], k=1, return_distance=False)[0]
+    nodes, _ = ox.graph_to_gdfs(G)
+    closest_node_to_d = nodes.iloc[d_idx].index.values[0]
+    closest_node_to_f = nodes.iloc[f_idx].index.values[0]
+    route = nx.shortest_path(G, 
+                             closest_node_to_d,
+                             closest_node_to_f,
+                             weight='length')
+    return route
+
 
 def simplify_gps(infile, outfile, nb_routes=sys.maxsize):
     with open(infile,'rb') as infile:

@@ -192,9 +192,8 @@ def create_dict_vox(df, starting, nb_routes, bikepath=False):
     
     dict_vox = {}
     tab_routes_voxels = []
-    
-    
-    for route_num in range(starting, nb_routes+1):
+
+    for route_num in range(starting, starting+nb_routes):
         tab_routes_voxels.append([])
         route = df[df["route_num"]==route_num]
         points = route.values.tolist()
@@ -238,8 +237,8 @@ def create_dict_vox(df, starting, nb_routes, bikepath=False):
                 if(bikepath==True):
                     dict_vox[key]["cluster"] = route_num
 
-                if(not key in tab_routes_voxels[route_num-1]):
-                    tab_routes_voxels[route_num-1].append(key)
+                if(not key in tab_routes_voxels[-1]):
+                    tab_routes_voxels[-1].append(key)
                     
                 '''find the good intersection point (if the line is going up, we search the intersection between 
                 it and the up line of the voxel for example)'''
@@ -281,8 +280,8 @@ def create_dict_vox(df, starting, nb_routes, bikepath=False):
             if(bikepath==True):
                 dict_vox[key]["cluster"] = route_num
 
-            if(not key in tab_routes_voxels[route_num-1]):
-                tab_routes_voxels[route_num-1].append(key)
+            if(not key in tab_routes_voxels[-1]):
+                tab_routes_voxels[-1].append(key)
 
     nb_max_routes = 0
                

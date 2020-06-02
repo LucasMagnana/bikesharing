@@ -8,17 +8,21 @@ import python.voxels as voxels
 import python.data as data
 
 
-def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, clustering, cuda):
+def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, clustering, tree, G, cuda):
 
     nb_new_cluster = 0
 
-    df_route = data.pathfind_route(d_point, f_point)
-    df_route = df_route[["lat", "lon", "route_num"]]
+    route = data.pathfind_route_osmnx(d_point, f_point, tree, G)
+    route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
+    route_coord = [x + [1] for x in route_coord]
+
+    df_route = pd.DataFrame(route_coord, columns=["lat", "lon", "route_num"])
     tab_routes_voxels, _ = voxels.create_dict_vox(df_route, 1, 1)
     route = tab_routes_voxels[0]
+
+
     tab_voxels_int = []
     nb_vox = 0
-
 
     for vox in route:
         if(nb_vox%voxels_frequency==0):
@@ -36,15 +40,15 @@ def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, c
 
     route = tab_voxels_int
     if(len(route)>0):
-            tens_route = torch.Tensor(route).unsqueeze(1)
-            if(cuda):
-                tens_route = tens_route.cuda()
+        tens_route = torch.Tensor(route).unsqueeze(1)
+        if(cuda):
+            tens_route = tens_route.cuda()
 
-            hidden = network.initHidden()
-            for j in range(tens_route.shape[0]):
-                input = tens_route[j].unsqueeze(1)
-                output, hidden = network(input, hidden)
-            pred = output.argmax(dim=1, keepdim=True)
+        hidden = network.initHidden()
+        for j in range(tens_route.shape[0]):
+            input = tens_route[j].unsqueeze(1)
+            output, hidden = network(input, hidden)
+        pred = output.argmax(dim=1, keepdim=True)
     
     return df_route, pred.item(), nb_new_cluster
     

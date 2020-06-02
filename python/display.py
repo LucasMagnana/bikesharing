@@ -8,7 +8,7 @@ token = "pk.eyJ1IjoibG1hZ25hbmEiLCJhIjoiY2s2N3hmNzgwMGNnODNqcGJ1N2l2ZXZpdiJ9.-aO
 px.set_mapbox_access_token(token)
 
 
-def display(dfdisplay, n=75, line_group="route_num", color=None):
+def display(dfdisplay, n=75, line_group="route_num", color=None, filename=None):
     """
     Display a dataframe of gps points on a mapbox map.
     Parameters
@@ -29,6 +29,8 @@ def display(dfdisplay, n=75, line_group="route_num", color=None):
             dfdisplay = dfdisplay[dfdisplay[line_group]<n]
     fig = px.line_mapbox(dfdisplay, lat="lat", lon="lon", line_group=line_group, color=color, zoom=11)
     fig.show()
+    if(filename != None):
+        fig.write_image(filename)
 
 
 def display_routes(df, tab_routes, tab_voxels=[], line_group="route_num", color=None):
