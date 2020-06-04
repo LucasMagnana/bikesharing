@@ -49,7 +49,10 @@ def main(args):
                 vox_int = [int(vox_str[0]), int(vox_str[1])]
                 tab_points = voxels.get_voxel_points(vox_int)
                 #points = tab_points[0][:2]+tab_points[1][:2]+tab_points[2][:2]+tab_points[3][:2]
-                points = [dict_voxels[vox]["cluster"], i+1]
+                if vox not in dict_voxels :
+                    points = [-1, i+1]
+                else:
+                    points = [dict_voxels[vox]["cluster"], i+1]
                 tab_routes_voxels_int[i].append(points)
             nb_vox += 1
 

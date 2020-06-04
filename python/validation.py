@@ -20,7 +20,6 @@ def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, c
     tab_routes_voxels, _ = voxels.create_dict_vox(df_route, 1, 1)
     route = tab_routes_voxels[0]
 
-
     tab_voxels_int = []
     nb_vox = 0
 

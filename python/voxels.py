@@ -201,6 +201,28 @@ def create_dict_vox(df, starting, nb_routes, bikepath=False):
         if(len(points) > 1):
             vox_starting_routes = find_voxel_int(points[0])
             vox_finishing_routes = find_voxel_int(points[-1])
+
+        elif(len(points)==1):
+            vox_int = find_voxel_int(points[0])
+            key = str(int(vox_int[0]))+";"+str(int(vox_int[1]))
+            if key in dict_vox:
+                if(route_num not in dict_vox[key]["tab_routes_real"]):
+                    dict_vox[key]["tab_routes_real"].append(route_num)
+            else :
+                dict_vox[key] = {"tab_routes_real": [route_num], "tab_routes_extended": [], "tab_routes_starting": [], "tab_routes_finishing": [],
+                            "cyclability_coeff": 0}
+
+            if(route_num not in dict_vox[key]["tab_routes_starting"]):
+                dict_vox[key]["tab_routes_starting"].append(route_num)
+
+            if(route_num not in dict_vox[key]["tab_routes_finishing"]):
+                dict_vox[key]["tab_routes_finishing"].append(route_num)
+
+            if(bikepath==True):
+                dict_vox[key]["cluster"] = route_num
+
+            if(not key in tab_routes_voxels[-1]):
+                tab_routes_voxels[-1].append(key)
                     
         for j in range(len(points)-1):
             p1 = points[j] #we take two points in the dataframe that create a line
