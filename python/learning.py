@@ -9,7 +9,6 @@ from NN import *
 from RNN import *
 import datetime
 
-
 def train_full_connected(df, tab_clusters, loss, optimizer, network, size_routes, cuda, nb_step):
     loss_tab = []
     pca = PCA(n_components=1)
@@ -68,13 +67,17 @@ def test_full_connected(df, network, dict_cluster, size_routes, cuda):
     return good_predict/nb_predict
 
 
-def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step):
+def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step, df_test=None):
     loss_tab = []
+    predict_tab = []
     print("start:", datetime.datetime.now().time())
     for s in range(nb_step):
 
         if(s != 0 and s%(nb_step//4) == 0):
             print("1/4:", datetime.datetime.now().time())
+
+        if(s != 0 and s%10 == 0):
+            predict_tab.append(test_recursive(df_test, network, tab_clusters, size_data, cuda))
 
         key = -1
         route = []
@@ -106,7 +109,7 @@ def train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda,
         optimizer.step()
         '''for p in network.parameters():
             p.data.add_(-0.005, p.grad.data)'''
-    return(loss_tab)
+    return loss_tab, predict_tab
 
 def test_recursive(df, network, tab_clusters, size_data, cuda):
     good_predict = 0
@@ -145,9 +148,9 @@ def test_random(df, tab_clusters):
     return good_predict/nb_predict
 
 
-def train(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step):
+def train(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step, df_test=None):
     if(isinstance(network, RNN) or isinstance(network, RNN_LSTM)):
-        return train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step)
+        return train_recursive(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step, df_test)
     else:
         return train_full_connected(df, tab_clusters, loss, optimizer, network, size_data, cuda, nb_step)
 

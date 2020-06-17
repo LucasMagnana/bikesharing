@@ -99,8 +99,7 @@ def main(args):
     optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
     loss = nn.NLLLoss()
 
-    tab_loss = learning.train(df_train, tab_clusters, loss, optimizer, network, size_data, cuda, args.num_samples)
-
+    tab_loss, tab_predict = learning.train(df_train, tab_clusters, loss, optimizer, network, size_data, cuda, args.num_samples, df_test)
 
     g_predict = learning.test(df_test, None, tab_clusters, size_data, cuda)
     print("Random:", g_predict*100, "%")
@@ -114,6 +113,10 @@ def main(args):
 
     plt.plot(tab_loss)
     plt.ylabel('Error')
+    plt.show()
+
+    plt.plot(tab_predict)
+    plt.ylabel('Prediction')
     plt.show()
 
     '''import torch
