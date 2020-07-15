@@ -16,7 +16,7 @@ def find_cluster(d_point, f_point, network, voxels_frequency, df, dict_voxels, c
     route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
     route_coord = [x + [1] for x in route_coord]
 
-    df_route = pd.DataFrame(route_coord, columns=["lat", "lon", "route_num"])
+    df_route = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num"])
     tab_routes_voxels, _ = voxels.create_dict_vox(df_route, 1, 1)
     route = tab_routes_voxels[0]
 
