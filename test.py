@@ -33,7 +33,7 @@ import python.validation as validation
 #import python.learning as learning
 #from python.NN import *
 
-coeff_min = 0.5
+coeff_min = 0.3
 
 
 def test_deviation(vox, point, dist_prev, dict_voxels):
@@ -119,7 +119,7 @@ deviation = 0 #5e-3
 
 tab_predict = []
 
-i = 11
+i = 9
 print(i)
 if(tab_clusters[i] != -1 and i != 675):
     df_temp = df[df["route_num"]==i+1]

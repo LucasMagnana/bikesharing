@@ -53,8 +53,8 @@ def display_cluster_heatmap(df, tab_routes, tab_voxels=[], line_group="route_num
         vox_str = key.split(";")
         vox_int = [int(vox_str[0]), int(vox_str[1])]
         vox_pos = voxel.get_voxel_points(vox_int, 0)
-        if(len(tab_routes) >= 0):
-            tab.append([vox_pos[0][0], vox_pos[0][1], len(tab_routes)])
+        if(dict_voxels[key]["cyclability_coeff"]):
+            tab.append([vox_pos[0][0], vox_pos[0][1], dict_voxels[key]["cyclability_coeff"]])
 
     dfdisplay = pd.DataFrame(tab, columns=["lat", "lon", "value"])
     fig = px.scatter_mapbox(dfdisplay, lat="lat", lon="lon",  color="value", size="value", zoom=10)
