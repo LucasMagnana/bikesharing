@@ -122,7 +122,7 @@ deviation = 0 #5e-3
 tab_predict = []
 
 i = 9
-print(i)
+print(tab_clusters[i])
 if(tab_clusters[i] != -1 and i != 675):
     df_temp = df[df["route_num"]==i+1]
     d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
@@ -163,11 +163,19 @@ dp.display_cluster_heatmap(df_simplified, dict_cluster[cl])
 ################################################################################_
 
 df_cluster = pd.DataFrame(columns=["lat", "lon", "route_num"])
-for i in range(len(dict_cluster[cl])):
-    df_temp = df_simplified[df_simplified["route_num"]==dict_cluster[cl][i]+1]
-    df_temp["num_route"] = i+1
+for num_route in range(len(dict_cluster[cl])):
+    df_temp = df_simplified[df_simplified["route_num"]==dict_cluster[cl][num_route]+1]
+    df_temp["num_route"] = num_route+1
     df_cluster = df_cluster.append(df_temp)
 _, dict_voxels_cluster = voxel.create_dict_vox(df_cluster, 1, df_cluster.iloc[-1]["route_num"])
+
+
+df_c_simplified = df_route.append(df_simplified[df_simplified["route_num"]==i+1])
+dp.display(df_c_simplified)
+tab_voxels, _ = voxel.create_dict_vox(df_c_simplified, 1, 2)
+coeff_simplified = metric.get_distance_voxels(0, 1, tab_voxels)
+print(coeff_simplified)
+
 
 print("start:", datetime.datetime.now().time())
 for v in G:
@@ -182,12 +190,18 @@ for v in G:
                 tot_coeff += dict_voxels_cluster[vox]["cyclability_coeff"]
             if(nb_vox_found > 0):
                 tot_coeff /= nb_vox_found
-        G[v][v_n][0]['length'] -= G[v][v_n][0]['length']*(tot_coeff/1.7)
-
+        G[v][v_n][0]['length'] -= G[v][v_n][0]['length']*(tot_coeff/1.6)
 print("end:", datetime.datetime.now().time())
 
 route = data.pathfind_route_osmnx(d_point, f_point, tree, G)
 route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
-route_coord = [x + [2, 1] for x in route_coord]
-df_route_modified = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num", "type"])
+route_coord = [x + [2] for x in route_coord]
+df_route_modified = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num"])
 dp.display(df_route_modified)
+
+df_c_modified = df_route.append(df_route_modified)
+tab_voxels, _ = voxel.create_dict_vox(df_c_modified, 1, 2)
+coeff_modified = metric.get_distance_voxels(0, 1, tab_voxels)
+
+print(max(coeff_simplified), max(coeff_modified))
+
