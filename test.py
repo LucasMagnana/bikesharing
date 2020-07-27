@@ -35,41 +35,6 @@ import python.validation as validation
 #import python.learning as learning
 #from python.NN import *
 
-coeff_min = 0.3
-
-
-def test_deviation(vox, point, dist_prev, dict_voxels):
-    vox = vox.split(";")
-    vox = [int(vox[0]), int(vox[1])]
-    tab_vox_adj = []
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, 0, 1))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, 0, -1))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, 1, 0))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, -1, 0))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, 1, 1))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, -1, 1))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, 1, -1))
-    tab_vox_adj.append(voxel.get_adjacent_voxel(vox, -1, -1))
-
-    max_dist = 999999999999999999999
-    next_vox = None
-    for vox_adj in tab_vox_adj:
-        key_adj = str(int(vox_adj[0]))+";"+str(int(vox_adj[1]))
-        point_adj = voxel.get_voxel_points(vox_adj)
-        point_adj = [point_adj[0][0], point_adj[0][1]]
-        if(key_adj in dict_voxels and dict_voxels[key_adj]["cyclability_coeff"]>coeff_min):
-            dist = data.distance_between_points(point, point_adj)
-            if(dist<dist_prev and dist<max_dist):
-                max_dist = dist
-                next_vox = key_adj
-    return next_vox, max_dist
-
-
-
-
-
-
-
 with open("files/gpx_matched_simplified.df",'rb') as infile:
     df_simplified = pickle.load(infile)
 tab_routes_voxels_simplified, dict_voxels_simplified = voxel.create_dict_vox(df_simplified, df_simplified.iloc[0]["route_num"], df_simplified.iloc[-1]["route_num"])
@@ -102,6 +67,10 @@ with open("files/kmeans.sk",'rb') as infile:
     kmeans = pickle.load(infile)
 with open("files/dict_cluster",'rb') as infile:
     dict_cluster = pickle.load(infile)
+with open("files/graph_modifications.dict",'rb') as infile:
+    dict_modif = pickle.load(infile)
+with open("files/resultats.tab",'rb') as infile:
+    tab_results = pickle.load(infile)
     
 df = df_pathfinding
     
@@ -121,87 +90,117 @@ deviation = 0 #5e-3
 
 tab_predict = []
 
-i = 9
-print(tab_clusters[i])
-if(tab_clusters[i] != -1 and i != 675):
-    df_temp = df[df["route_num"]==i+1]
-    d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
-    f_point = [df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]]
-    rand = random.uniform(-deviation, deviation)
-    d_point[0] += rand
-    rand = random.uniform(-deviation, deviation)
-    d_point[1] += rand
-    rand = random.uniform(-deviation, deviation)
-    f_point[0] += rand
-    rand = random.uniform(-deviation, deviation)
-    f_point[1] += rand
-    
-    if(d_point[0] < 45.5):
-        tree = tree_stetienne
-        G = G_stetienne
+for i in range(20):
+    if(tab_clusters[i] != -1 and i != 675):
+        print(i, tab_clusters[i])
+        df_temp = df[df["route_num"]==i+1]
+        d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
+        f_point = [df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]]
+        rand = random.uniform(-deviation, deviation)
+        d_point[0] += rand
+        rand = random.uniform(-deviation, deviation)
+        d_point[1] += rand
+        rand = random.uniform(-deviation, deviation)
+        f_point[0] += rand
+        rand = random.uniform(-deviation, deviation)
+        f_point[1] += rand
+        
+        if(d_point[0] < 45.5):
+            tree = tree_stetienne
+            G = G_stetienne
+        else:
+            tree = tree_lyon
+            G = G_lyon
+        df_route, cl, nb_new_cluster = validation.find_cluster(d_point, f_point, network, voxels_frequency, df_pathfinding, dict_voxels, 
+                                        kmeans, tree, G, False)
+
+        dp.display(df_route)
+        dp.display_cluster_heatmap(df_simplified, dict_cluster[cl])
+
+
+
+        ################################################################################_
+
+        df_route = df_route[["lat", "lon", "route_num"]]
+
+        df_cluster = pd.DataFrame(columns=["lat", "lon", "route_num"])
+        for num_route in range(len(dict_cluster[cl])):
+            df_temp = df_simplified[df_simplified["route_num"]==dict_cluster[cl][num_route]+1]
+            df_temp["num_route"] = num_route+1
+            df_cluster = df_cluster.append(df_temp)
+        _, dict_voxels_cluster = voxel.create_dict_vox(df_cluster, 1, df_cluster.iloc[-1]["route_num"])
+
+        df_temp = df_simplified[df_simplified["route_num"]==i+1]
+        df_temp["route_num"] = 2
+        df_c_simplified = df_route.append(df_temp)
+        tab_voxels, dict_voxels = voxel.create_dict_vox(df_c_simplified, 1, 2)
+        df_c_simplified["type"] = 0
+
+        tab_voxels, dict_voxels = voxel.create_dict_vox(df_c_simplified, 1, 2)
+        tab_voxels_global = voxel.get_tab_routes_voxels_global(dict_voxels, df_c_simplified.iloc[-1]["route_num"])
+        tab_voxels_min_route = voxel.get_voxels_with_min_routes(dict_voxels, 2)
+        df = pd.DataFrame(tab_voxels_min_route, columns=["lat", "lon", "route_num", "type"])
+        df_c_simplified = df_c_simplified.append(df)
+        dp.display(df_c_simplified, color="type") 
+
+        coeff_simplified = metric.get_distance_voxels(0, 1, tab_voxels)
+
+        if(cl in dict_modif):
+            for key in dict_modif[cl]:
+                vertexes = key.split(";")
+                v = int(vertexes[0])
+                v_n = int(vertexes[1])
+                G[v][v_n][0]['length'] -= dict_modif[cl][key]
+        else :
+            print("start:", datetime.datetime.now().time())
+            dict_modif[cl] = {}
+            for v in G:
+                for v_n in G[v]:
+                    df_line = pd.DataFrame([[G.nodes[v]['y'], G.nodes[v]['x'], 1], [G.nodes[v_n]['y'], G.nodes[v_n]['x'], 1]], columns=["lat", "lon", "route_num"])
+                    tab_voxels, _ = voxel.create_dict_vox(df_line, 1, 1)
+                    nb_vox_found = 0
+                    tot_coeff = 0
+                    for vox in tab_voxels[0]:
+                        if vox in dict_voxels_cluster:
+                            nb_vox_found += 1
+                            tot_coeff += dict_voxels_cluster[vox]["cyclability_coeff"]
+                        if(nb_vox_found > 0):
+                            tot_coeff /= nb_vox_found
+                    dict_modif[cl][str(v)+";"+str(v_n)] = G[v][v_n][0]['length']*(tot_coeff/1.6)
+                    G[v][v_n][0]['length'] -= G[v][v_n][0]['length']*(tot_coeff/1.6)
+            print("end:", datetime.datetime.now().time())
+            with open("files/graph_modifications.dict",'wb') as outfile:
+                pickle.dump(dict_modif, outfile)
+
+        route = data.pathfind_route_osmnx(d_point, f_point, tree, G)
+        route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
+        route_coord = [x + [2] for x in route_coord]
+        df_route_modified = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num"])
+        dp.display(df_route_modified)
+
+        df_c_modified = df_simplified[df_simplified["route_num"]==i+1]
+        df_c_modified["route_num"] = 1
+        df_c_modified = df_c_modified.append(df_route_modified)
+        df_c_modified["type"] = 0
+
+        tab_voxels, dict_voxels = voxel.create_dict_vox(df_c_modified, 1, 2)
+        tab_voxels_global = voxel.get_tab_routes_voxels_global(dict_voxels, df_c_modified.iloc[-1]["route_num"])
+        tab_voxels_min_route = voxel.get_voxels_with_min_routes(dict_voxels, 2)
+        df = pd.DataFrame(tab_voxels_min_route, columns=["lat", "lon", "route_num", "type"])
+        df_c_modified = df_c_modified.append(df)
+        dp.display(df_c_modified, color="type") 
+
+        coeff_modified = metric.get_distance_voxels(0, 1, tab_voxels_global)
+
+
+
+        print(1-min(coeff_simplified), 1-min(coeff_modified))
+        if(len(tab_results) < i+1):
+            tab_results.append((1-min(coeff_modified)) - (1-min(coeff_simplified)))
     else:
-        tree = tree_lyon
-        G = G_lyon
-    df_route, cl, nb_new_cluster = validation.find_cluster(d_point, f_point, network, voxels_frequency, df_pathfinding, dict_voxels, 
-                                    kmeans, tree, G, False)
-    if(cl == tab_clusters[i]):
-        nb_good_predict += 1
-    nb_predict += 1
-if(nb_predict > 0):
-    tab_predict.append(nb_good_predict/nb_predict)
+        if(len(tab_results) < i+1):
+            tab_results.append(None)
 
-tot_predict = 0
-for predict in tab_predict:
-    tot_predict += predict
-print(tot_predict/len(tab_predict))
-
-dp.display(df_route)
-dp.display_cluster_heatmap(df_simplified, dict_cluster[cl])
-
-
-
-################################################################################_
-
-df_cluster = pd.DataFrame(columns=["lat", "lon", "route_num"])
-for num_route in range(len(dict_cluster[cl])):
-    df_temp = df_simplified[df_simplified["route_num"]==dict_cluster[cl][num_route]+1]
-    df_temp["num_route"] = num_route+1
-    df_cluster = df_cluster.append(df_temp)
-_, dict_voxels_cluster = voxel.create_dict_vox(df_cluster, 1, df_cluster.iloc[-1]["route_num"])
-
-
-df_c_simplified = df_route.append(df_simplified[df_simplified["route_num"]==i+1])
-dp.display(df_c_simplified)
-tab_voxels, _ = voxel.create_dict_vox(df_c_simplified, 1, 2)
-coeff_simplified = metric.get_distance_voxels(0, 1, tab_voxels)
-print(coeff_simplified)
-
-
-print("start:", datetime.datetime.now().time())
-for v in G:
-    for v_n in G[v]:
-        df_line = pd.DataFrame([[G.nodes[v]['y'], G.nodes[v]['x'], 1], [G.nodes[v_n]['y'], G.nodes[v_n]['x'], 1]], columns=["lat", "lon", "route_num"])
-        tab_voxels, _ = voxel.create_dict_vox(df_line, 1, 1)
-        nb_vox_found = 0
-        tot_coeff = 0
-        for vox in tab_voxels[0]:
-            if vox in dict_voxels_cluster:
-                nb_vox_found += 1
-                tot_coeff += dict_voxels_cluster[vox]["cyclability_coeff"]
-            if(nb_vox_found > 0):
-                tot_coeff /= nb_vox_found
-        G[v][v_n][0]['length'] -= G[v][v_n][0]['length']*(tot_coeff/1.6)
-print("end:", datetime.datetime.now().time())
-
-route = data.pathfind_route_osmnx(d_point, f_point, tree, G)
-route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
-route_coord = [x + [2] for x in route_coord]
-df_route_modified = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num"])
-dp.display(df_route_modified)
-
-df_c_modified = df_route.append(df_route_modified)
-tab_voxels, _ = voxel.create_dict_vox(df_c_modified, 1, 2)
-coeff_modified = metric.get_distance_voxels(0, 1, tab_voxels)
-
-print(max(coeff_simplified), max(coeff_modified))
+with open("files/resultats.tab",'wb') as outfile:
+    pickle.dump(tab_results, outfile)
 
