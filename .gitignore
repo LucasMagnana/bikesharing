@@ -2,3 +2,4 @@ datas/
 python/__pycache__/
 *.png
 .vscode/
+cache/
