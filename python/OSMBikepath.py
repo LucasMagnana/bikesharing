@@ -1,6 +1,8 @@
 from OSMPythonTools.overpass import overpassQueryBuilder
 from OSMPythonTools.overpass import Overpass
 from OSMPythonTools.data import Data, dictRangeYears, ALL
+import pandas as pd
+import pickle
 
 from OSMPythonTools.nominatim import Nominatim
 
@@ -25,9 +27,19 @@ def fetch(typeOfRoad):
     return overpass.query(query)
 data = Data(fetch, dimensions)
 
+route_coord = []
+route_num = 0
+
 for i in range(len(dimensions['typeOfRoad'])):
     print(data.select(typeOfRoad=i).countElements())
     json = data.select(typeOfRoad=i).toJSON()
     for el in json["elements"] :
-        if(len(el['nodes']) != len(el['geometry'])):
-            print("faux")
+      for pos in el['geometry']:
+        route_coord.append([pos["lon"], pos["lat"], route_num])
+      route_num += 1
+
+df = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num"])
+
+with open("files/osm_bikepath.df", "wb") as infile:
+    pickle.dump(df, infile)
+
