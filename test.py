@@ -49,8 +49,15 @@ tab_routes_voxels_pathfinding_global = voxel.get_tab_routes_voxels_global(dict_v
 
 with open("files/lyon.ox", "rb") as infile:
     G_lyon = pickle.load(infile)
+
+with open("files/lyon.ox", "rb") as infile:
+    G_lyon_base = pickle.load(infile)
+
 with open("files/st_etienne.ox", "rb") as infile:
     G_stetienne = pickle.load(infile)
+
+with open("files/st_etienne.ox", "rb") as infile:
+    G_stetienne_base = pickle.load(infile)
 
 
     
@@ -94,6 +101,7 @@ tab_diff_coeff = []
 #________________________________________________________________________
 
 for i in range(250): #len(tab_clusters)):
+
     if(tab_clusters[i] != -1 and i != 675):
         #i=8
         print(i)
@@ -112,9 +120,11 @@ for i in range(250): #len(tab_clusters)):
         if(d_point[0] < 45.5):
             tree = tree_stetienne
             G = G_stetienne
+            G_base = G_stetienne_base
         else:
             tree = tree_lyon
             G = G_lyon
+            G_base = G_lyon_base
         df_route, cl, nb_new_cluster = validation.find_cluster(d_point, f_point, network, voxels_frequency, df_pathfinding, dict_voxels_pathfinding, 
                                      kmeans, tree, G, False)
         if(cl == tab_clusters[i]):
@@ -180,11 +190,20 @@ for i in range(250): #len(tab_clusters)):
                 pickle.dump(dict_modif, outfile)
 
 
+
+
+
         route = data.pathfind_route_osmnx(d_point, f_point, tree, G)
         route_coord = [[G.nodes[x]["x"], G.nodes[x]["y"]] for x in route]
         route_coord = [x + [2, 2] for x in route_coord]
         df_route_modified = pd.DataFrame(route_coord, columns=["lon", "lat", "route_num", "type"])
         #dp.display(df_route_modified)
+
+        for key in dict_modif[cl]:
+            vertexes = key.split(";")
+            v = int(vertexes[0])
+            v_n = int(vertexes[1])
+            G[v][v_n][0]['length'] = G_base[v][v_n][0]['length']
 
         df_c_modified = df_simplified[df_simplified["route_num"]==i+1]
         df_c_modified["route_num"] = 1
