@@ -85,15 +85,18 @@ network = RNN.RNN_LSTM(size_data, max(tab_clusters)+1, hidden_size, num_layers)
 network.load_state_dict(torch.load("files/network_osmnx.pt"))
 network.eval()
 
-deviation = 5e-3
+deviation = 0 #5e-3
 
 tab_coeff_simplified = []
 tab_coeff_modified = []
+
+tab_diff_coeff = []
 #________________________________________________________________________
 
-for i in range(150): #len(tab_clusters)):
+for i in range(250): #len(tab_clusters)):
     if(tab_clusters[i] != -1 and i != 675):
-        #print(i, tab_clusters[i])
+        #i=8
+        print(i)
         df_temp = df_pathfinding[df_pathfinding["route_num"]==i+1]
         d_point = [df_temp.iloc[0]["lat"], df_temp.iloc[0]["lon"]]
         f_point = [df_temp.iloc[-1]["lat"], df_temp.iloc[-1]["lon"]]
@@ -200,14 +203,19 @@ for i in range(150): #len(tab_clusters)):
         tab_coeff_simplified.append(1-min(coeff_simplified))
         tab_coeff_modified.append(1-min(coeff_modified))
 
-        print(1-min(coeff_simplified) <= 1-min(coeff_modified))
+        tab_diff_coeff.append((1-min(coeff_modified))-(1-min(coeff_simplified)))
+
+        #print(1-min(coeff_simplified) <= 1-min(coeff_modified))
 
 fig = go.Figure()
 # Create and style traces
-fig.add_trace(go.Scatter(y=tab_coeff_simplified, name='Simplified',
+'''fig.add_trace(go.Scatter(y=tab_coeff_simplified, name='Simplified',
                             line=dict(color='firebrick', width=4)))
 fig.add_trace(go.Scatter(y=tab_coeff_modified, name = 'Modified',
-                            line=dict(color='royalblue', width=4)))
+                            line=dict(color='royalblue', width=4)))'''
+
+fig.add_trace(go.Scatter(y=tab_diff_coeff, name='Simplified',
+                            line=dict(color='firebrick', width=4)))
 
 # Here we modify the tickangle of the xaxis, resulting in rotated labels.
 fig.update_layout(barmode='group', xaxis_tickangle=-45)
